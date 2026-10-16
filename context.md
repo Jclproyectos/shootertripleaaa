@@ -36,7 +36,15 @@ geométricas simples (rectángulos y círculos). Incluye modo un jugador y
 ## Archivos del proyecto
 | Archivo | Descripción |
 |---|---|
-| `juego_disparos.py` | Script único con todo el juego (~733 líneas): menú, un jugador, anfitrión, cliente y red |
+| `juego_disparos.py` | Lanzador fino: delega en `shooter.app.main` |
+| `shooter/config.py` | Constantes y ajustes (pantalla, colores, velocidades, red) |
+| `shooter/sonidos.py` | Generación procedural de sonidos |
+| `shooter/red.py` | Comunicación TCP + JSON (`Conexion`, `ServidorAnfitrion`, `conectar_a`, `ip_local`) |
+| `shooter/mundo.py` | Simulación (`Jugador`, `Mundo`) |
+| `shooter/interfaz.py` | Dibujado, menús y pantallas |
+| `shooter/bucles.py` | Bucles de juego (un jugador, anfitrión, cliente) |
+| `shooter/app.py` | Punto de entrada (inicializa Pygame y menús) |
+| `shooter/__main__.py` | Permite `python -m shooter` |
 | `requirements.txt` | Dependencias (`pygame-ce>=2.5.8`) |
 | `context.md` | Este archivo: registro de avances y decisiones |
 | `README.md` | Instrucciones de instalación y uso |
@@ -45,22 +53,23 @@ geométricas simples (rectángulos y círculos). Incluye modo un jugador y
 ## Cómo ejecutarlo
 ```powershell
 python -m pip install -r requirements.txt
-python juego_disparos.py
+python juego_disparos.py      # o bien: python -m shooter
 ```
 En el menú: `1` un jugador, `2` anfitrión (crear partida), `3` unirse por IP.
 
 ## Detalles técnicos
 - Ventana 600×800, 60 FPS, movimiento independiente del framerate mediante `dt`.
-- Constantes de configuración agrupadas al inicio del script.
+- Constantes de configuración agrupadas en `shooter/config.py`.
 - Colisiones con `rect.colliderect()`; el jugador se mantiene en pantalla con `rect.clamp_ip()`.
-- **Sonidos generados en memoria** al arrancar (sin archivos externos, para mantener el juego en un único script):
+- **Código modularizado** en el paquete `shooter/`, con una responsabilidad por módulo (config, sonidos, red, mundo, interfaz, bucles, app).
+- **Sonidos generados en memoria** al arrancar (sin archivos externos):
   - Disparo: barrido de tono descendente de 880 Hz a 220 Hz con envolvente cuadrática (0.12 s).
   - Explosión: ruido aleatorio + tono grave descendente con envolvente exponencial (0.45 s).
   - Se construyen con `struct.pack` como buffer PCM 16 bits mono a 22050 Hz y se crean con `pygame.mixer.Sound(buffer=...)`, sin depender de numpy.
   - El sonido del disparo se limita a 1 cada 70 ms para no saturar la tarjeta de audio (las balas sí son ilimitadas).
 - Si el audio no está disponible (`pygame.mixer.init` falla), el juego avisa por consola y continúa sin sonido.
 - La simulación está encapsulada en la clase `Mundo` (jugadores, disparos, enemigos) y se reutiliza en un jugador y en el anfitrión.
-- La red se encapsula en `Conexion` (hilo lector + cola) y `ServidorAnfitrion` (acepta un cliente).
+- La red se encapsula en `Conexion` (hilo lector + cola) y `ServidorAnfitrion` (acepta un cliente), en `shooter/red.py`.
 
 ## Ideas que se completaron
 - ~~Sonidos (disparo, impacto)~~ — Hecho: generados proceduralmente en el propio script.
@@ -99,3 +108,4 @@ En el menú: `1` un jugador, `2` anfitrión (crear partida), `3` unirse por IP.
   - El anfitrión muestra su IP local; autoridad del anfitrión con predicción local en el cliente.
   - Marcador dual (J1/J2) y colores diferenciados por jugador y por dueño de cada disparo.
   - Pruebas automáticas (drivers dummy) que validan: capa de red (bienvenida, entradas cliente→servidor, estado servidor→cliente), simulación (colisión +10, enemigo eliminado, game over, serialización), modo un jugador, e **integración anfitrión-cliente real** (cliente conecta, recibe bienvenida con índice 1, 146 estados con 2 jugadores y envía entradas): **TODAS LAS PRUEBAS PASARON**.
+- **2026-10-15** — Se **modularizó** el código: el script monolítico (~733 líneas) se dividió en el paquete `shooter/` con un módulo por responsabilidad (`config`, `sonidos`, `red`, `mundo`, `interfaz`, `bucles`, `app`), más `__main__.py` para `python -m shooter`. `juego_disparos.py` pasó a ser un lanzador fino que delega en `shooter.app.main`, manteniendo el comando documentado. Se re-ejecutaron las pruebas (red, simulación, un jugador, integración anfitrión-cliente y puntos de entrada): **TODAS PASARON**.

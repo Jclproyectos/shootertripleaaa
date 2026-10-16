@@ -63,3 +63,27 @@ Detalles:
 
 - Python 3.14+
 - `pygame-ce` (ver `requirements.txt`)
+
+## Estructura del código
+
+El juego está modularizado en el paquete `shooter/`:
+
+| Módulo | Responsabilidad |
+|---|---|
+| `shooter/config.py` | Constantes y ajustes (pantalla, colores, velocidades, red) |
+| `shooter/sonidos.py` | Generación procedural de sonidos (sin archivos externos) |
+| `shooter/red.py` | Comunicación TCP + JSON para el multijugador |
+| `shooter/mundo.py` | Simulación (jugadores, disparos, enemigos, colisiones) |
+| `shooter/interfaz.py` | Dibujado, menús y pantallas |
+| `shooter/bucles.py` | Bucles de juego (un jugador, anfitrión, cliente) |
+| `shooter/app.py` | Punto de entrada: inicializa Pygame y gestiona los menús |
+| `juego_disparos.py` | Lanzador fino (delega en `shooter.app.main`) |
+
+Para cambiar el comportamiento (velocidades, puerto, colores, etc.) basta con
+editar `shooter/config.py`.
+
+También se puede ejecutar directamente con:
+
+```powershell
+python -m shooter
+```
